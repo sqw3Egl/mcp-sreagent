@@ -27,7 +27,9 @@ variable "github_mcp_endpoint" {
   type = string
 }
 
-variable "github_bearer_token" {
+# Mint this outside the connector from your GitHub App credentials.
+# Do not place the GitHub App private key in the SRE Agent connector config.
+variable "github_app_installation_token" {
   type      = string
   sensitive = true
 }
@@ -68,7 +70,7 @@ resource "azapi_update_resource" "github_mcp_connector" {
           partnerType             = "GitHub"
           endpoint                = var.github_mcp_endpoint
           authType                = "BearerToken"
-          bearerToken             = var.github_bearer_token
+          bearerToken             = var.github_app_installation_token
           selectedTools           = var.github_selected_tools
           toolsVisibleToMetaAgent = true
         }
