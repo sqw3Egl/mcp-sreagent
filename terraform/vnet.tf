@@ -41,6 +41,17 @@ resource "azurerm_subnet" "resources" {
 
   default_outbound_access_enabled   = false
   private_endpoint_network_policies = "Disabled"
+
+  delegation {
+    name = "Microsoft.App/environments"
+
+    service_delegation {
+      name = "Microsoft.App/environments"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
+    }
+  }
 }
 
 resource "azurerm_subnet" "private_endpoints" {

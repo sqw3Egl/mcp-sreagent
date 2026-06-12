@@ -1,8 +1,8 @@
-
 resource "azurerm_container_app_environment" "this" {
   name                       = "${var.prefix}-cae"
-  location                   = azurerm_resource_group.uks_sreagent_rsg.location
+  location                   = azurerm_virtual_network.uks_vnet_vnet.location
   resource_group_name        = azurerm_resource_group.uks_sreagent_rsg.name
+  infrastructure_subnet_id   = azurerm_subnet.resources.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.uks_sreagent.id
   tags                       = var.tags
 }
@@ -77,5 +77,3 @@ output "github_mcp_server_url" {
 output "github_mcp_identity_resource_id" {
   value = azurerm_user_assigned_identity.uks_sreagent_identity.id
 }
-
-
