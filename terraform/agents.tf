@@ -55,7 +55,7 @@ resource "azurerm_user_assigned_identity" "uks_sreagent_identity" {
 }
 
 
-resource "azurerm_role_assignment" "uks_sreagent_agent_contributor" {
+resource "azurerm_role_assignment" "uks_sreagent_agent_kvadmin" {
   scope                = azurerm_key_vault.uks_keyvault_kv.id
   role_definition_name = "Key Vault Administrator"
   principal_id         = azurerm_user_assigned_identity.uks_sreagent_identity.principal_id
