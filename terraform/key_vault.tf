@@ -10,10 +10,11 @@ resource "azurerm_key_vault" "uks_keyvault_kv" {
 
   network_acls {
     bypass         = "AzureServices"
-    default_action = "Deny"
+    default_action = "Allow"
     ip_rules       = [
         "20.90.100.16/32",
         "83.67.195.205/32"
+
     ]
   }
 }

@@ -8,7 +8,7 @@ resource "azurerm_container_app_environment" "this" {
 }
 
 resource "azurerm_container_app" "github_mcp" {
-  name                         = "${var.prefix}-app-2"
+  name                         = "${var.prefix}-app"
   container_app_environment_id = azurerm_container_app_environment.this.id
   resource_group_name          = azurerm_resource_group.uks_sreagent_rsg.name
   revision_mode                = "Single"
@@ -42,7 +42,7 @@ resource "azurerm_container_app" "github_mcp" {
     max_replicas = 2
 
     container {
-      name   = "github-mcp-server-2"
+      name   = "github-mcp-server"
       image  = var.github_mcp_image
       cpu    = 0.5
       memory = "1Gi"
