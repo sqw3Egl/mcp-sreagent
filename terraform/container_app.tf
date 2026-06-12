@@ -1,5 +1,14 @@
+
+resource "azurerm_container_app_environment" "this" {
+  name                       = "${var.prefix}-cae"
+  location                   = azurerm_resource_group.uks_sreagent_rsg.location
+  resource_group_name        = azurerm_resource_group.uks_sreagent_rsg.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.uks_sreagent.id
+  tags                       = var.tags
+}
+
 resource "azurerm_container_app" "github_mcp" {
-  name                         = "${var.prefix}-app"
+  name                         = "${var.prefix}-app-2"
   container_app_environment_id = azurerm_container_app_environment.this.id
   resource_group_name          = azurerm_resource_group.uks_sreagent_rsg.name
   revision_mode                = "Single"
@@ -33,7 +42,7 @@ resource "azurerm_container_app" "github_mcp" {
     max_replicas = 2
 
     container {
-      name   = "github-mcp-server"
+      name   = "github-mcp-server-2"
       image  = var.github_mcp_image
       cpu    = 0.5
       memory = "1Gi"
@@ -71,10 +80,4 @@ output "github_mcp_identity_resource_id" {
   value = azurerm_user_assigned_identity.uks_sreagent_identity.id
 }
 
-resource "azurerm_container_app_environment" "this" {
-  name                       = "${var.prefix}-cae"
-  location                   = azurerm_resource_group.uks_sreagent_rsg.location
-  resource_group_name        = azurerm_resource_group.uks_sreagent_rsg.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.uks_sreagent.id
-  tags                       = var.tags
-}
+

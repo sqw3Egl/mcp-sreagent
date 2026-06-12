@@ -32,6 +32,15 @@ resource "azurerm_private_endpoint" "uk_keyvault_pe" {
   }
 }
 
+
+
+removed {
+  from = azapi_resource.uk_keyvault_pe_nic
+  lifecycle {
+    destroy = false 
+  }
+}
+
 # This NIC is created as part of the private endpoint. It is exported with AzAPI so
 # the current subscription inventory can still be imported without inventing a fake
 # standalone azurerm network interface configuration.

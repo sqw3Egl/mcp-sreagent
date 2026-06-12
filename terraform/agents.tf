@@ -62,7 +62,7 @@ resource "azurerm_role_assignment" "uks_sreagent_agent_kvadmin" {
 }
 
 resource "azurerm_role_assignment" "uks_sreagent_agent_contributor" {
-  scope                = data.azurerm_client_config.current.subscription_id
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
   role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.uks_sreagent_identity.principal_id
 }

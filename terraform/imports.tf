@@ -100,7 +100,7 @@
 
 # import {
 #   to = azurerm_container_app.github_mcp
-#   id = "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.App/containerApps/github-mcp-app"
+#   id = "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.App/containerApps/github-mcp-app-2"
 # }
 
 # // Removed import for azapi_resource.uks_sreagent_1 because the azapi
