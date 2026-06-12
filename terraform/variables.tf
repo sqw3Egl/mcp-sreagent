@@ -66,12 +66,12 @@ variable "container_port" {
 
 variable "github_app_id" {
   type    = string
-  default = null
+  default = "4021906"
 }
 
 variable "github_app_installation_id" {
   type    = string
-  default = null
+  default = "139457421"
 }
 
 variable "github_app_private_key_pem" {

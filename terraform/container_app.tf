@@ -22,7 +22,7 @@ resource "azurerm_container_app" "github_mcp" {
   secret {
     name                = "github-app-private-key"
     identity            = azurerm_user_assigned_identity.uks_sreagent_identity.id
-    key_vault_secret_id = azurerm_key_vault_secret.github_app_private_key.versionless_id
+    key_vault_secret_id = azurerm_key_vault_secret.github_app_private_key.id
   }
 
   ingress {
@@ -68,8 +68,6 @@ resource "azurerm_container_app" "github_mcp" {
       }
     }
   }
-
-  depends_on = [azurerm_role_assignment.github_mcp_kv_secrets_user]
 }
 
 output "github_mcp_server_url" {
