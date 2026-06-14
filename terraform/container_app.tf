@@ -44,7 +44,14 @@ resource "azurerm_container_app" "github_mcp" {
     container {
       name   = "github-mcp-server"
       image  = var.github_mcp_image
-      args   = ["http", "--port", tostring(var.container_port)]
+      args = [
+        "--stdio",
+        "python3 /app/wrapper.py",
+        "--port",
+        tostring(var.container_port),
+        "--outputTransport",
+        "streamableHttp",
+      ]
       cpu    = 0.5
       memory = "1Gi"
 
@@ -100,7 +107,7 @@ resource "azurerm_container_app" "github_mcp" {
 }
 
 output "github_mcp_server_url" {
-  value = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}"
+  value = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
 }
 
 output "github_mcp_identity_resource_id" {

@@ -55,13 +55,12 @@ variable "key_vault_name" {
 
 variable "github_mcp_image" {
   type    = string
-  # Placeholder image for planning; replace with actual MCP image.
-  default = "mcp/github"
+  default = "us-central1-docker.pkg.dev/genuine-flight-317411/mcp/github-app-mcp:1.0.0"
 }
 
 variable "container_port" {
   type    = number
-  default = 8080
+  default = 8000
 }
 
 variable "github_app_id" {
