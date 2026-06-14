@@ -89,6 +89,11 @@ resource "azurerm_container_app" "github_mcp" {
         value = "repos"
       }
 
+      env {
+        name = "GITHUB_TOOLS"
+        value = var.additional_tools
+      }
+
       startup_probe {
         transport               = "TCP"
         port                    = var.container_port

@@ -38,6 +38,11 @@ variable "github_selected_tools" {
   ]
 }
 
+variable "additional_tools" {
+  type    = string
+  default = "create_pull_request,merge_pull_request,update_pull_request"
+}
+
 variable "location" {
   type    = string
   default = "uksouth"
