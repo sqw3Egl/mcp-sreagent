@@ -85,8 +85,8 @@ resource "azurerm_container_app" "github_mcp" {
       }
 
       env {
-        name = "GITHUB_TOOLS"
-        value = var.github_selected_tools
+        name  = "GITHUB_TOOLSETS"
+        value = "repos"
       }
 
       startup_probe {

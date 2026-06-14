@@ -18,7 +18,7 @@ variable "github_selected_tools" {
   default = [
     "create_branch",
     "create_or_update_file",
-    #"create_repository",
+    "create_repository",
     "delete_file",
     "fork_repository",
     "get_commit",
