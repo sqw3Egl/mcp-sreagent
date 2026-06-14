@@ -7,6 +7,21 @@ resource "azurerm_container_app_environment" "this" {
   tags                       = var.tags
 }
 
+resource "azurerm_private_endpoint" "uk_containerenv_pe" {
+  name                = "uk-containerenv-pe"
+  location            = azurerm_resource_group.uks_sreagent_rsg.location
+  resource_group_name = azurerm_resource_group.uks_sreagent_rsg.name
+  subnet_id           = azurerm_subnet.private_endpoints.id
+
+  private_service_connection {
+    name                           = "uk-containerenv-pe_75cb7dae-6fc0-40ba-1234"
+    private_connection_resource_id = azurerm_container_app_environment.this.id
+    is_manual_connection           = false
+    subresource_names              = ["environment"]
+  }
+}
+
+
 resource "azurerm_container_app" "github_mcp" {
   name                         = "${var.prefix}-app"
   container_app_environment_id = azurerm_container_app_environment.this.id

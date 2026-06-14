@@ -12,9 +12,17 @@ resource "azurerm_private_dns_zone_virtual_network_link" "privatelink_vaultcore_
 }
 
 resource "azurerm_private_dns_a_record" "uks_keyvault_kv" {
-  name                = "uks-keyvault-kv"
+  name                = "uks-keyvault-dns"
   zone_name           = azurerm_private_dns_zone.privatelink_vaultcore_azure_net.name
   resource_group_name = azurerm_resource_group.uks_vnet_rsg.name
   ttl                 = 3600
   records             = ["10.0.0.68"]
+}
+
+resource "azurerm_private_dns_a_record" "uks_containerenv_dns" {
+  name                = "uks-containerenv-dns"
+  zone_name           = azurerm_private_dns_zone.privatelink_vaultcore_azure_net.name
+  resource_group_name = azurerm_resource_group.uks_vnet_rsg.name
+  ttl                 = 3600
+  records             = ["${azurerm_private_endpoint.uk_containerenv_pe.private_service_connection.0.private_ip_address}"]
 }
