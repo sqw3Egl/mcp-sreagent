@@ -26,3 +26,8 @@ resource "azurerm_private_dns_a_record" "uks_containerenv_dns" {
   ttl                 = 3600
   records             = ["${azurerm_private_endpoint.uk_containerenv_pe.private_service_connection.0.private_ip_address}"]
 }
+
+resource "azurerm_private_dns_zone" "privatelink_vaultcore_azure_net" {
+  name                = ".azure.net"
+  resource_group_name = azurerm_resource_group.uks_vnet_rsg.name
+}
