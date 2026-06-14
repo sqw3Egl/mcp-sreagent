@@ -1,14 +1,19 @@
 resource "azapi_resource" "github_mcp_connector" {
-  type                      = "Microsoft.App/agents/connectors@2025-05-01-preview"
-  name                      = "githubcustommcp"
+  type                      = "Microsoft.App/agents/connectors@2026-01-01"
+  name                      = "githubmcp"
   parent_id                 = local.agent_resource_id
   schema_validation_enabled = false
 
   body = {
     properties = {
       dataConnectorType = "Mcp"
-      dataSource        = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
+      dataSource        = "githubmcp"
+      endpoint          = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
+      extendedProperties = {
+        type     = "http"
+        endpoint = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
+      }
+      identity = "system"
     }
-     identity = azurerm_user_assigned_identity.uks_sreagent_identity.id
   }
 }
