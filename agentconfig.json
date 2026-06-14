@@ -1,0 +1,77 @@
+{
+  "id": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.App/agents/uks-sreagent-2",
+  "identity": {
+    "principalId": "4cbb1948-1acc-44ca-b478-57957bc2724c",
+    "tenantId": "21cf3499-0582-4344-9a87-78253166a61a",
+    "type": "SystemAssigned, UserAssigned",
+    "userAssignedIdentities": {
+      "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourcegroups/uks-sreagent-rsg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uks-sreagent-1-vxfjfmeby4z7w": {
+        "clientId": "8c6aef87-5a59-41e1-8e7a-a110d85d92a0",
+        "principalId": "43a51b20-a567-45d6-be3b-e43d85fe1af1"
+      }
+    }
+  },
+  "location": "uksouth",
+  "name": "uks-sreagent-2",
+  "properties": {
+    "actionConfiguration": {
+      "accessLevel": "Low",
+      "identity": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uks-sreagent-1-vxfjfmeby4z7w",
+      "mode": "review"
+    },
+    "agentEndpoint": "https://uks-sreagent-2--13ceeb3a.6e03add5.uksouth.azuresre.ai",
+    "agentIdentity": null,
+    "agentSpaceId": null,
+    "dashboardConfiguration": null,
+    "defaultModel": {
+      "name": "Automatic",
+      "provider": "MicrosoftFoundry"
+    },
+    "experimentalSettings": {
+      "EnableConnectorsV2": true,
+      "EnableSandboxGroup": true,
+      "EnableV2AgentLoop": true,
+      "EnableWorkspaceTools": true
+    },
+    "firstPartyConfiguration": null,
+    "gitHubConfiguration": null,
+    "incidentManagementConfiguration": null,
+    "knowledgeGraphConfiguration": {
+      "identity": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uks-sreagent-1-vxfjfmeby4z7w",
+      "managedResources": [
+        "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0"
+      ]
+    },
+    "logConfiguration": {
+      "applicationInsightsConfiguration": {
+        "appId": null,
+        "applicationInsightsResourceId": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-law-rsg/providers/Microsoft.Insights/components/uks-sreagent-1-9ea6b9b1-8dbe-app-insights",
+        "connectionString": null
+      },
+      "logAnalyticsConfiguration": null
+    },
+    "mcpServers": [],
+    "monthlyAgentUnitLimit": 10000,
+    "outboundConnectionConfiguration": null,
+    "outboundIpAddresses": [
+      "20.90.100.16"
+    ],
+    "permissions": null,
+    "powerState": "Running",
+    "provisioningState": "Succeeded",
+    "runningState": "BuildingKnowledgeGraph",
+    "upgradeChannel": "Preview",
+    "vnetConfiguration": {
+      "subnetResourceId": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-vnet-rsg/providers/Microsoft.Network/virtualNetworks/uks-vnet-vnet/subnets/SREAgent"
+    }
+  },
+  "systemData": {
+    "createdAt": "2026-06-12T19:46:54.0137478Z",
+    "createdBy": "andy@andyfldtest.com",
+    "createdByType": "User",
+    "lastModifiedAt": "2026-06-12T21:01:07.9148858Z",
+    "lastModifiedBy": "andy@andyfldtest.com",
+    "lastModifiedByType": "User"
+  },
+  "type": "Microsoft.App/agents"
+}

@@ -50,7 +50,7 @@ variable "github_mcp_image_repository" {
 
 variable "github_mcp_image_tag" {
   type    = string
-  default = "1.0.3"
+  default = "1.0.4"
 }
 
 variable "container_port" {

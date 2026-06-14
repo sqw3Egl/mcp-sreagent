@@ -8,7 +8,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-REFRESH_INTERVAL_SEC = int(os.environ.get("GITHUB_APP_TOKEN_REFRESH_INTERVAL_SEC", "1800"))
+REFRESH_INTERVAL_SEC = int(os.environ.get("GITHUB_APP_TOKEN_REFRESH_INTERVAL_SEC", "600"))
 
 
 def _mask_token(token: str) -> str:

@@ -1,0 +1,24 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.App/agents/uks-sreagent-2/connectors/githubmcpcustom",
+      "name": "githubmcpcustom",
+      "properties": {
+        "dataConnectorType": "Mcp",
+        "dataSource": null,
+        "deploymentError": null,
+        "endpoint": "https://github-mcp-app--0000005.wittymeadow-c908ef33.uksouth.azurecontainerapps.io/mcp",
+        "extendedProperties": {
+          "endpoint": null,
+          "type": null
+        },
+        "identity": "/subscriptions/0433d2b6-3aa6-4751-95d8-ad50c815ede0/resourceGroups/uks-sreagent-rsg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uks-sreagent-1-vxfjfmeby4z7w",
+        "keyVaultUri": null,
+        "name": "githubmcpcustom",
+        "provisioningState": "Succeeded",
+        "source": "Agent"
+      },
+      "type": "Microsoft.App/agents/connectors"
+    }
+  ]
+}
