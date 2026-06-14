@@ -13,16 +13,6 @@ variable "agent_name" {
   default = "uks-sreagent-2"
 }
 
-variable "github_mcp_endpoint" {
-  type    = string
-  default = "https://example.com"
-}
-
-variable "github_app_installation_token" {
-  type      = string
-  sensitive = true
-}
-
 variable "github_selected_tools" {
   type = list(string)
 
