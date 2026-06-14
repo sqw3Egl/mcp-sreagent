@@ -40,6 +40,12 @@ resource "azurerm_container_app" "github_mcp" {
     target_port                = var.container_port
     transport                  = "http"
 
+    ip_security_restriction {
+      name             = "Allow_SRE_Agent_Public_IP"
+      action           = "Allow"
+      ip_address_range = "20.90.100.16/32"
+    }
+
     traffic_weight {
       latest_revision = true
       percentage      = 100
@@ -90,7 +96,7 @@ resource "azurerm_container_app" "github_mcp" {
       }
 
       env {
-        name = "GITHUB_TOOLS"
+        name  = "GITHUB_TOOLS"
         value = var.additional_tools
       }
 
