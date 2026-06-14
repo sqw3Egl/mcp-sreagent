@@ -1,0 +1,1 @@
+MCP connectivity test after networking changes.\nUTC timestamp: 2026-06-14T18:11:18.348363+00:00\nBranch: sreagent/mcp-network-test-20260614-181118\nThis file is safe to remove after validation.\n
