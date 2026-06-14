@@ -9,5 +9,6 @@ resource "azapi_resource" "github_mcp_connector" {
       dataConnectorType = "Mcp"
       dataSource        = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
     }
+     identity = azurerm_user_assigned_identity.uks_sreagent_identity.id
   }
 }
