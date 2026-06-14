@@ -4,6 +4,7 @@ resource "azurerm_container_app_environment" "this" {
   resource_group_name        = azurerm_resource_group.uks_sreagent_rsg.name
   infrastructure_subnet_id   = azurerm_subnet.resources.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.uks_sreagent.id
+  public_network_access      = "Disabled"
   tags                       = var.tags
 }
 
@@ -20,7 +21,6 @@ resource "azurerm_private_endpoint" "uk_containerenv_pe" {
     subresource_names              = ["managedEnvironments"]
   }
 }
-
 
 resource "azurerm_container_app" "github_mcp" {
   name                         = "${var.prefix}-app"
@@ -54,12 +54,6 @@ resource "azurerm_container_app" "github_mcp" {
     external_enabled           = true
     target_port                = var.container_port
     transport                  = "http"
-
-    ip_security_restriction {
-      name             = "Allow_SRE_Agent_Public_IP"
-      action           = "Allow"
-      ip_address_range = "20.90.100.16/32"
-    }
 
     traffic_weight {
       latest_revision = true
@@ -147,7 +141,7 @@ resource "azurerm_container_app" "github_mcp" {
 }
 
 output "github_mcp_server_url" {
-  value = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
+  value = "https://${azurerm_container_app.github_mcp.ingress[0].fqdn}${local.github_mcp_connector_endpoint_path}"
 }
 
 output "github_mcp_image" {
