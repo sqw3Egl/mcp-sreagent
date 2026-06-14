@@ -60,7 +60,7 @@ variable "github_mcp_image" {
 }
 
 variable "container_port" {
-  type    = numbermcpp
+  type    = number
   default = 8080
 }
 
