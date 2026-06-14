@@ -13,7 +13,7 @@ resource "azapi_resource" "github_mcp_connector" {
         type     = "http"
         endpoint = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
       }
-      identity = "system"
+      identity = "${azurerm_user_assigned_identity.uks_sreagent_identity.id}"
     }
   }
 }
