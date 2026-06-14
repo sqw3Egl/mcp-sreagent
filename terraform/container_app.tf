@@ -14,6 +14,10 @@ resource "azurerm_container_app" "github_mcp" {
   revision_mode                = "Single"
   tags                         = var.tags
 
+  depends_on = [
+    azurerm_role_assignment.github_mcp_acr_pull,
+  ]
+
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.uks_sreagent_identity.id]
@@ -23,6 +27,11 @@ resource "azurerm_container_app" "github_mcp" {
     name                = "github-app-private-key"
     identity            = azurerm_user_assigned_identity.uks_sreagent_identity.id
     key_vault_secret_id = azurerm_key_vault_secret.github_app_private_key.id
+  }
+
+  registry {
+    server   = azurerm_container_registry.github_mcp.login_server
+    identity = azurerm_user_assigned_identity.uks_sreagent_identity.id
   }
 
   ingress {
@@ -42,8 +51,8 @@ resource "azurerm_container_app" "github_mcp" {
     max_replicas = 2
 
     container {
-      name   = "github-mcp-server"
-      image  = var.github_mcp_image
+      name  = "github-mcp-server"
+      image = local.github_mcp_image
       args = [
         "--stdio",
         "python3 /app/wrapper.py",
@@ -110,6 +119,14 @@ output "github_mcp_server_url" {
   value = "https://${azurerm_container_app.github_mcp.latest_revision_fqdn}/mcp"
 }
 
+output "github_mcp_image" {
+  value = local.github_mcp_image
+}
+
 output "github_mcp_identity_resource_id" {
   value = azurerm_user_assigned_identity.uks_sreagent_identity.id
+}
+
+output "github_mcp_acr_name" {
+  value = azurerm_container_registry.github_mcp.name
 }

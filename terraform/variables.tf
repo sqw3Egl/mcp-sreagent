@@ -53,9 +53,14 @@ variable "key_vault_name" {
   default = "uks-keyvault-kv"
 }
 
-variable "github_mcp_image" {
+variable "github_mcp_image_repository" {
   type    = string
-  default = "us-central1-docker.pkg.dev/genuine-flight-317411/mcp/github-app-mcp:1.0.0"
+  default = "mcp/github-app-mcp"
+}
+
+variable "github_mcp_image_tag" {
+  type    = string
+  default = "1.0.1"
 }
 
 variable "container_port" {
