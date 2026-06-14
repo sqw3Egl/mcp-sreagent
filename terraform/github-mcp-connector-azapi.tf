@@ -1,6 +1,6 @@
 resource "azapi_resource" "github_mcp_connector" {
   type                      = "Microsoft.App/agents/connectors@2026-01-01"
-  name                      = "githubmcp"
+  name                      = "githubmcpcustom"
   parent_id                 = local.agent_resource_id
   schema_validation_enabled = false
 
