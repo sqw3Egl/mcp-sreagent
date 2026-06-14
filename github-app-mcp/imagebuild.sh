@@ -1,0 +1,1 @@
+az acr build --registry '<ACR_NAME>' --image '<IMAGE_NAME>' --platform linux/amd64 ../github-app-mcp
