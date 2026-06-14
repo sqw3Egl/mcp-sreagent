@@ -15,16 +15,26 @@ variable "agent_name" {
 
 variable "github_selected_tools" {
   type = list(string)
-
   default = [
-    "githubmcp_get_me",
-    "githubmcp_get_file_contents",
-    "githubmcp_search_code",
-    "githubmcp_search_repositories",
-    "githubmcp_pull_request_read",
-    "githubmcp_issue_read",
-    "githubmcp_list_pull_requests",
-    "githubmcp_list_issues"
+    "create_branch",
+    "create_or_update_file",
+    #"create_repository",
+    "delete_file",
+    "fork_repository",
+    "get_commit",
+    "get_file_contents",
+    "get_latest_release",
+    "get_release_by_tag",
+    "get_tag",
+    "list_branches",
+    "list_commits",
+    "list_releases",
+    "list_repository_collaborators",
+    "list_tags",
+    "push_files",
+    "search_code",
+    "search_commits",
+    "search_repositories",
   ]
 }
 

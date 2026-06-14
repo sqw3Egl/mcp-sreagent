@@ -84,6 +84,11 @@ resource "azurerm_container_app" "github_mcp" {
         secret_name = "github-app-private-key"
       }
 
+      env {
+        name = "GITHUB_TOOLS"
+        value = var.github_selected_tools
+      }
+
       startup_probe {
         transport               = "TCP"
         port                    = var.container_port
