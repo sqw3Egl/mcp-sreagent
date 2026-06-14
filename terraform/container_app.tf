@@ -10,7 +10,7 @@ resource "azurerm_container_app_environment" "this" {
 
 resource "azurerm_private_endpoint" "uk_containerenv_pe" {
   name                = "uk-containerenv-pe1"
-  location            = azurerm_resource_group.uks_sreagent_rsg.location
+  location            = azurerm_resource_group.uks_vnet_rsg.location
   resource_group_name = azurerm_resource_group.uks_sreagent_rsg.name
   subnet_id           = azurerm_subnet.private_endpoints.id
 
