@@ -51,7 +51,7 @@ resource "azurerm_container_app" "github_mcp" {
 
   ingress {
     allow_insecure_connections = false
-    external_enabled           = true
+    external_enabled           = false
     target_port                = var.container_port
     transport                  = "http"
 
