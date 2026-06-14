@@ -56,11 +56,11 @@ variable "key_vault_name" {
 variable "github_mcp_image" {
   type    = string
   # Placeholder image for planning; replace with actual MCP image.
-  default = "nginx:latest"
+  default = "mcp/github"
 }
 
 variable "container_port" {
-  type    = number
+  type    = numbermcpp
   default = 8080
 }
 
