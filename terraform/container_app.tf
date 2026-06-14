@@ -44,6 +44,7 @@ resource "azurerm_container_app" "github_mcp" {
     container {
       name   = "github-mcp-server"
       image  = var.github_mcp_image
+      args   = ["http", "--port", tostring(var.container_port)]
       cpu    = 0.5
       memory = "1Gi"
 
@@ -65,6 +66,34 @@ resource "azurerm_container_app" "github_mcp" {
       env {
         name        = "GITHUB_APP_PRIVATE_KEY"
         secret_name = "github-app-private-key"
+      }
+
+      startup_probe {
+        transport               = "TCP"
+        port                    = var.container_port
+        initial_delay           = 5
+        interval_seconds        = 10
+        failure_count_threshold = 18
+        timeout                 = 5
+      }
+
+      readiness_probe {
+        transport               = "TCP"
+        port                    = var.container_port
+        initial_delay           = 3
+        interval_seconds        = 10
+        failure_count_threshold = 3
+        success_count_threshold = 1
+        timeout                 = 5
+      }
+
+      liveness_probe {
+        transport               = "TCP"
+        port                    = var.container_port
+        initial_delay           = 30
+        interval_seconds        = 30
+        failure_count_threshold = 3
+        timeout                 = 5
       }
     }
   }
