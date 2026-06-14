@@ -5,18 +5,18 @@ resource "azurerm_key_vault" "uks_keyvault_kv" {
   tenant_id                     = local.tenant_id
   sku_name                      = "standard"
   rbac_authorization_enabled    = true
-  public_network_access_enabled = true
+  public_network_access_enabled = false
   soft_delete_retention_days    = 90
 
-  network_acls {
-    bypass         = "AzureServices"
-    default_action = "Allow"
-    ip_rules       = [
-        "20.90.100.16/32",
-        "83.67.195.205/32"
+  # network_acls {
+  #   bypass         = "AzureServices"
+  #   default_action = "Deny"
+  #   ip_rules       = [
+  #       # "20.90.100.16/32",
+  #       # "83.67.195.205/32"
 
-    ]
-  }
+  #   ]
+  # }
 }
 
 resource "azurerm_private_endpoint" "uk_keyvault_pe" {
