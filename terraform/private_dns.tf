@@ -25,7 +25,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "privatelink_azureconta
 }
 
 resource "azurerm_private_dns_a_record" "uks_keyvault_kv" {
-  name                = "uks-keyvault-dns"
+  name                = "uks-keyvault-kv"
   zone_name           = azurerm_private_dns_zone.privatelink_vaultcore_azure_net.name
   resource_group_name = azurerm_resource_group.uks_vnet_rsg.name
   ttl                 = 3600
