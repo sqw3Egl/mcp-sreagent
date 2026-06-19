@@ -3,6 +3,10 @@
 This version removes secret-bearing environment variables.
 It fetches the GitHub App private key from Azure Key Vault using managed identity.
 
+Supported call styles:
+- Portal-style named parameters: main(org, repo, path, appId, ...)
+- Legacy wrapper-style object: main({"org": ..., "repo": ..., ...})
+
 Required call parameters:
 - org
 - repo
@@ -44,6 +48,7 @@ DEFAULT_REDACT_SECRETS_IN_ERRORS = True
 DEFAULT_INSTALLATION_MODE = "auto"
 DEFAULT_KEY_VAULT_NAME = "uks-keyvault-kv"
 DEFAULT_KEY_VAULT_SECRET_NAME = "github-app-private-key-pem"
+DEFAULT_MANAGED_IDENTITY_CLIENT_ID = "8c6aef87-5a59-41e1-8e7a-a110d85d92a0"
 DEFAULT_ALLOWED_ORGS = {"sqw3Egl"}
 SECRETS_TO_REDACT = []
 
@@ -364,7 +369,7 @@ def _get_file(org, repo, path, ref, token):
     }
 
 
-def main(params):
+def _run(params):
     try:
         org = params["org"]
         repo = params["repo"]
@@ -378,7 +383,7 @@ def main(params):
         key_vault_name = params.get("keyVaultName", DEFAULT_KEY_VAULT_NAME)
         key_vault_secret_name = params.get("keyVaultSecretName", DEFAULT_KEY_VAULT_SECRET_NAME)
         key_vault_secret_version = params.get("keyVaultSecretVersion")
-        managed_identity_client_id = params.get("managedIdentityClientId")
+        managed_identity_client_id = params.get("managedIdentityClientId", DEFAULT_MANAGED_IDENTITY_CLIENT_ID)
 
         installation_mode = str(params.get("installationMode", DEFAULT_INSTALLATION_MODE)).strip().lower()
         installation_id = params.get("installationId")
@@ -459,3 +464,51 @@ def main(params):
     except Exception as exc:
         redact_secrets_in_errors = _to_bool(params.get("redactSecretsInErrors"), DEFAULT_REDACT_SECRETS_IN_ERRORS) if isinstance(params, dict) else DEFAULT_REDACT_SECRETS_IN_ERRORS
         return _result_error("internal_error", f"Unexpected error: {exc}", redact_secrets=redact_secrets_in_errors)
+
+
+def main(
+    org,
+    repo=None,
+    path=None,
+    appId=None,
+    ref=None,
+    maxBytes=DEFAULT_MAX_FILE_BYTES,
+    failOnTruncate=False,
+    includeMetadata=True,
+    keyVaultName=DEFAULT_KEY_VAULT_NAME,
+    keyVaultSecretName=DEFAULT_KEY_VAULT_SECRET_NAME,
+    keyVaultSecretVersion=None,
+    managedIdentityClientId=DEFAULT_MANAGED_IDENTITY_CLIENT_ID,
+    installationMode=DEFAULT_INSTALLATION_MODE,
+    installationId=None,
+    allowedOrgs=None,
+    allowedRepos=None,
+    allowedPathPrefixes=None,
+    blockBinaryFiles=DEFAULT_BLOCK_BINARY_FILES,
+    redactSecretsInErrors=DEFAULT_REDACT_SECRETS_IN_ERRORS,
+):
+    if isinstance(org, dict) and repo is None and path is None and appId is None:
+        return _run(org)
+
+    params = {
+        "org": org,
+        "repo": repo,
+        "path": path,
+        "appId": appId,
+        "ref": ref,
+        "maxBytes": maxBytes,
+        "failOnTruncate": failOnTruncate,
+        "includeMetadata": includeMetadata,
+        "keyVaultName": keyVaultName,
+        "keyVaultSecretName": keyVaultSecretName,
+        "keyVaultSecretVersion": keyVaultSecretVersion,
+        "managedIdentityClientId": managedIdentityClientId,
+        "installationMode": installationMode,
+        "installationId": installationId,
+        "allowedOrgs": allowedOrgs,
+        "allowedRepos": allowedRepos,
+        "allowedPathPrefixes": allowedPathPrefixes,
+        "blockBinaryFiles": blockBinaryFiles,
+        "redactSecretsInErrors": redactSecretsInErrors,
+    }
+    return _run(params)
