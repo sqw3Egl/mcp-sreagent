@@ -1,0 +1,62 @@
+apiVersion: sreagent/v1alpha1
+kind: ScheduledTask
+metadata:
+  name: github-sre-agent-sync
+spec:
+  description: Every 10 minutes, sync SRE Agent knowledge from sqw3Egl/sreagent and apply repo changes as source of truth.
+  schedule:
+    cron: '*/10 * * * *'
+    useCurrentThread: true
+    durationHours: 0
+  sourceOfTruth:
+    type: github
+    skill: github-code-reading
+    repository:
+      org: sqw3Egl
+      repo: sreagent
+      path: sreagent/
+      ref: main
+      appId: '4021906'
+  execution:
+    mode: autonomous
+    agentPrompt: |
+      Autonomous Scheduled Run
+      Goal: Keep SRE Agent aligned with the GitHub repository and treat the repository as the single source of truth.
+
+      Required skill: Load the github-code-reading skill at the start of the run.
+
+      Repository scope:
+      - org: sqw3Egl
+      - repo: sreagent
+      - path: sreagent/
+      - appId: 4021906
+      - ref: main
+
+      Execution steps:
+      1. Load the github-code-reading skill.
+      2. Read the repository subtree at sreagent/ using the GitHub App-backed repo reader with the explicit appId above.
+      3. Determine the current repository commit SHA for the read result.
+      4. Look in the current thread context and prior scheduled-task executions for the most recent successfully synced commit SHA for this same repo/path.
+      5. If there is no prior synced commit SHA, treat this run as the baseline sync and record the current commit SHA in the run output after completing the initial reconciliation.
+      6. If the current commit SHA matches the previous synced commit SHA, output exactly: "No material changes" and include the commit SHA.
+      7. If the commit SHA changed, inspect the changed files under sreagent/ and reconcile SRE Agent knowledge and behavior to match the repository contents. The repository is the source of truth.
+      8. Apply repo-driven updates only to agent-maintained knowledge or instructions that are safe and writable in the workspace. Do not write to config/, plugins/, or runtime-content/.
+      9. Update relevant files under memories/synthesizedKnowledge/ when the repo introduces durable changes that should affect how SRE Agent operates. Remove or correct stale local knowledge when it conflicts with the repository.
+      10. Do not invent changes that are not present in the repo. If the repo content is unclear, prefer a minimal summary and defer destructive interpretation.
+      11. In the output, always state: previous synced commit, current commit, whether changes were applied, and which local files were updated.
+      12. End by clearly stating the new synced commit SHA that future runs should use as the comparison baseline.
+    constraints:
+      - Read-only against GitHub
+      - Non-destructive local updates only
+      - No Azure resource write actions
+      - Keep the run scoped to sqw3Egl/sreagent:sreagent/ on main
+    idempotence:
+      noChangeMessage: No material changes
+      rule: If there is no repo change since the last successful sync, make no local edits and do not repeat prior reconciliations.
+    output:
+      - Summary
+      - Previous synced commit
+      - Current commit
+      - Changed repo files or No material changes
+      - Local files updated
+      - New synced commit baseline
