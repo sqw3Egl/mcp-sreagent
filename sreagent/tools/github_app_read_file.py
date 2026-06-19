@@ -16,6 +16,8 @@ Required call parameters:
 Optional call parameters:
 - ref
 - maxBytes
+- maxFiles
+- maxTotalBytes
 - failOnTruncate
 - includeMetadata
 - keyVaultName
@@ -43,7 +45,11 @@ import urllib.request
 
 
 MAX_HARD_LIMIT = 1024 * 1024
+MAX_FILE_COUNT_HARD_LIMIT = 200
+MAX_TOTAL_HARD_LIMIT = 5 * 1024 * 1024
 DEFAULT_MAX_FILE_BYTES = 262144
+DEFAULT_MAX_FILES = 50
+DEFAULT_MAX_TOTAL_BYTES = 1048576
 DEFAULT_BLOCK_BINARY_FILES = True
 DEFAULT_REDACT_SECRETS_IN_ERRORS = True
 DEFAULT_INSTALLATION_MODE = "auto"
@@ -107,8 +113,8 @@ def _normalize_path(path):
 
     normalized = posixpath.normpath("/" + path.lstrip("/")).lstrip("/")
     if normalized in ("", ".", "..") or normalized.startswith("../") or "/../" in normalized:
-        raise ToolError("path_not_allowed", "path must resolve to a repository-relative file path")
-    return normalized
+        raise ToolError("path_not_allowed", "path must resolve to a repository-relative path")
+    return normalized.rstrip("/")
 
 
 def _is_allowed_org(org, allowed_orgs):
@@ -139,7 +145,7 @@ def _looks_binary(raw_bytes):
     if b"\x00" in raw_bytes:
         return True
     sample = raw_bytes[:1024]
-    non_text = sum(1 for b in sample if b < 9 or (13 < b < 32))
+    non_text = sum(1 for byte_value in sample if byte_value < 9 or (13 < byte_value < 32))
     return non_text > max(8, len(sample) // 10)
 
 
@@ -357,7 +363,7 @@ def _get_repo_metadata(org, repo, token):
     return payload
 
 
-def _get_commit_sha(org, repo, ref, token):
+def _get_commit_details(org, repo, ref, token):
     url = f"https://api.github.com/repos/{urllib.parse.quote(org)}/{urllib.parse.quote(repo)}/commits/{urllib.parse.quote(ref, safe='')}"
     status, payload, _ = _http_json("GET", url, _installation_headers(token))
 
@@ -368,13 +374,14 @@ def _get_commit_sha(org, repo, ref, token):
     if status >= 500:
         raise ToolError("internal_error", "GitHub commit lookup failed", retryable=True)
 
-    sha = payload.get("sha")
-    if not sha:
-        raise ToolError("internal_error", "Commit SHA missing from GitHub response")
-    return sha
+    commit_sha = payload.get("sha")
+    tree_sha = payload.get("commit", {}).get("tree", {}).get("sha")
+    if not commit_sha or not tree_sha:
+        raise ToolError("internal_error", "Commit details missing from GitHub response")
+    return {"commitSha": commit_sha, "treeSha": tree_sha}
 
 
-def _get_file(org, repo, path, ref, token):
+def _get_path_entry(org, repo, path, ref, token):
     encoded_path = "/".join(urllib.parse.quote(part, safe="") for part in path.split("/"))
     url = (
         f"https://api.github.com/repos/{urllib.parse.quote(org)}/{urllib.parse.quote(repo)}"
@@ -383,22 +390,24 @@ def _get_file(org, repo, path, ref, token):
     status, payload, headers = _http_json("GET", url, _installation_headers(token))
 
     if status == 404:
-        raise ToolError("not_found", f"File '{path}' was not found")
+        raise ToolError("not_found", f"Path '{path}' was not found")
     if status in (401, 403):
-        raise ToolError("access_denied", payload.get("message", "Access denied to file"))
+        raise ToolError("access_denied", payload.get("message", "Access denied to path"))
     if status >= 500:
-        raise ToolError("internal_error", "GitHub file request failed", retryable=True)
+        raise ToolError("internal_error", "GitHub path request failed", retryable=True)
 
     if isinstance(payload, list):
-        raise ToolError("not_found", "The requested path is a directory, not a file")
+        return {"type": "directory", "entries": payload}
+
     if payload.get("type") != "file":
-        raise ToolError("not_found", "The requested path is not a file")
+        raise ToolError("not_found", "The requested path is not a readable file or directory")
     if payload.get("encoding") != "base64":
         raise ToolError("internal_error", f"Unsupported GitHub content encoding: {payload.get('encoding')}")
 
     content = payload.get("content", "")
     raw_bytes = base64.b64decode(content.encode("utf-8"))
     return {
+        "type": "file",
         "sizeBytes": int(payload.get("size", 0)),
         "rawBytes": raw_bytes,
         "contentType": _guess_content_type(path),
@@ -406,7 +415,212 @@ def _get_file(org, repo, path, ref, token):
     }
 
 
+def _get_tree_entries(org, repo, tree_sha, token):
+    url = (
+        f"https://api.github.com/repos/{urllib.parse.quote(org)}/{urllib.parse.quote(repo)}"
+        f"/git/trees/{urllib.parse.quote(tree_sha, safe='')}?recursive=1"
+    )
+    status, payload, _ = _http_json("GET", url, _installation_headers(token))
+
+    if status == 404:
+        raise ToolError("not_found", "Repository tree was not found")
+    if status in (401, 403):
+        raise ToolError("access_denied", payload.get("message", "Access denied to repository tree"))
+    if status >= 500:
+        raise ToolError("internal_error", "GitHub repository tree request failed", retryable=True)
+
+    entries = payload.get("tree") or []
+    return entries, _to_bool(payload.get("truncated"), False)
+
+
+def _get_blob(org, repo, blob_sha, token):
+    url = (
+        f"https://api.github.com/repos/{urllib.parse.quote(org)}/{urllib.parse.quote(repo)}"
+        f"/git/blobs/{urllib.parse.quote(blob_sha, safe='')}"
+    )
+    status, payload, _ = _http_json("GET", url, _installation_headers(token))
+
+    if status == 404:
+        raise ToolError("not_found", f"Blob '{blob_sha}' was not found")
+    if status in (401, 403):
+        raise ToolError("access_denied", payload.get("message", "Access denied to blob"))
+    if status >= 500:
+        raise ToolError("internal_error", "GitHub blob request failed", retryable=True)
+    if payload.get("encoding") != "base64":
+        raise ToolError("internal_error", f"Unsupported GitHub blob encoding: {payload.get('encoding')}")
+
+    raw_bytes = base64.b64decode(payload.get("content", "").encode("utf-8"))
+    return {
+        "sizeBytes": int(payload.get("size", 0)),
+        "rawBytes": raw_bytes,
+    }
+
+
+def _decode_file_content(path, raw_bytes, max_bytes, fail_on_truncate, block_binary_files):
+    if block_binary_files and _looks_binary(raw_bytes):
+        raise ToolError("binary_file_not_supported", f"Binary file '{path}' is not supported by this tool")
+
+    try:
+        decoded = raw_bytes.decode("utf-8")
+        encoding = "utf-8"
+    except UnicodeDecodeError:
+        raise ToolError("binary_file_not_supported", f"File '{path}' is not valid utf-8 text")
+
+    warnings = []
+    truncated = False
+    if len(raw_bytes) > max_bytes:
+        if fail_on_truncate:
+            raise ToolError("file_too_large", f"File '{path}' exceeds maxBytes limit of {max_bytes}")
+        decoded = raw_bytes[:max_bytes].decode("utf-8", errors="ignore")
+        truncated = True
+        warnings.append(f"Content truncated to {max_bytes} bytes")
+
+    return {
+        "content": decoded,
+        "encoding": encoding,
+        "truncated": truncated,
+        "warnings": warnings,
+        "returnedBytes": len(decoded.encode("utf-8")),
+    }
+
+
+def _build_single_file_result(org, repo, path, resolved_ref, commit_sha, file_info, max_bytes, fail_on_truncate, include_metadata, block_binary_files):
+    decoded_info = _decode_file_content(path, file_info["rawBytes"], max_bytes, fail_on_truncate, block_binary_files)
+
+    result = {
+        "org": org,
+        "repo": repo,
+        "path": path,
+        "ref": resolved_ref,
+        "content": decoded_info["content"],
+        "truncated": decoded_info["truncated"],
+    }
+
+    if include_metadata:
+        result["commitSha"] = commit_sha
+        result["sizeBytes"] = file_info["sizeBytes"]
+        result["contentType"] = file_info["contentType"]
+        result["encoding"] = decoded_info["encoding"]
+        if decoded_info["warnings"]:
+            result["warnings"] = decoded_info["warnings"]
+
+    return result
+
+
+def _build_directory_result(
+    org,
+    repo,
+    root_path,
+    resolved_ref,
+    commit_sha,
+    tree_sha,
+    token,
+    max_bytes,
+    max_files,
+    max_total_bytes,
+    fail_on_truncate,
+    include_metadata,
+    block_binary_files,
+):
+    tree_entries, tree_truncated = _get_tree_entries(org, repo, tree_sha, token)
+    prefix = root_path + "/"
+    candidate_entries = []
+    for entry in tree_entries:
+        entry_path = entry.get("path")
+        if entry.get("type") != "blob" or not entry_path:
+            continue
+        if entry_path == root_path or entry_path.startswith(prefix):
+            candidate_entries.append(entry)
+
+    candidate_entries.sort(key=lambda entry: entry.get("path", ""))
+
+    files = []
+    skipped_files = []
+    warnings = []
+    total_returned_bytes = 0
+    truncated = False
+
+    if tree_truncated:
+        truncated = True
+        warnings.append("GitHub returned a truncated recursive tree; some files may be omitted")
+
+    for entry in candidate_entries:
+        if len(files) >= max_files:
+            truncated = True
+            warnings.append(f"Stopped after {max_files} files because maxFiles was reached")
+            break
+
+        blob = _get_blob(org, repo, entry["sha"], token)
+        try:
+            decoded_info = _decode_file_content(
+                entry["path"],
+                blob["rawBytes"],
+                max_bytes,
+                fail_on_truncate,
+                block_binary_files,
+            )
+        except ToolError as exc:
+            if exc.code == "binary_file_not_supported":
+                skipped_files.append({"path": entry["path"], "reason": exc.message})
+                continue
+            raise
+
+        if total_returned_bytes + decoded_info["returnedBytes"] > max_total_bytes:
+            if fail_on_truncate:
+                raise ToolError(
+                    "file_too_large",
+                    f"Directory content under '{root_path}' exceeds maxTotalBytes limit of {max_total_bytes}",
+                )
+            truncated = True
+            warnings.append(
+                f"Stopped after {len(files)} files because maxTotalBytes limit of {max_total_bytes} would be exceeded"
+            )
+            break
+
+        file_result = {
+            "path": entry["path"],
+            "content": decoded_info["content"],
+            "truncated": decoded_info["truncated"],
+        }
+        if include_metadata:
+            file_result["sizeBytes"] = blob["sizeBytes"]
+            file_result["contentType"] = _guess_content_type(entry["path"])
+            file_result["encoding"] = decoded_info["encoding"]
+            if decoded_info["warnings"]:
+                file_result["warnings"] = decoded_info["warnings"]
+
+        files.append(file_result)
+        total_returned_bytes += decoded_info["returnedBytes"]
+        if decoded_info["truncated"]:
+            truncated = True
+
+    result = {
+        "org": org,
+        "repo": repo,
+        "path": root_path,
+        "ref": resolved_ref,
+        "pathType": "directory",
+        "files": files,
+        "truncated": truncated,
+    }
+
+    if include_metadata:
+        result["commitSha"] = commit_sha
+        result["discoveredFileCount"] = len(candidate_entries)
+        result["returnedFileCount"] = len(files)
+        result["skippedCount"] = len(skipped_files)
+        result["totalReturnedBytes"] = total_returned_bytes
+        if skipped_files:
+            result["skippedFiles"] = skipped_files
+        if warnings:
+            result["warnings"] = warnings
+
+    return result
+
+
 def _run(params):
+    redact_secrets_in_errors = _to_bool(params.get("redactSecretsInErrors"), DEFAULT_REDACT_SECRETS_IN_ERRORS)
+
     try:
         org = params["org"]
         repo = params["repo"]
@@ -414,6 +628,8 @@ def _run(params):
         app_id = params["appId"]
         ref = params.get("ref")
         max_bytes = int(params.get("maxBytes", DEFAULT_MAX_FILE_BYTES))
+        max_files = int(params.get("maxFiles", DEFAULT_MAX_FILES))
+        max_total_bytes = int(params.get("maxTotalBytes", DEFAULT_MAX_TOTAL_BYTES))
         fail_on_truncate = _to_bool(params.get("failOnTruncate"), False)
         include_metadata = _to_bool(params.get("includeMetadata"), True)
 
@@ -429,7 +645,6 @@ def _run(params):
         allowed_repos = set(_to_string_list(params.get("allowedRepos")))
         allowed_path_prefixes = _to_string_list(params.get("allowedPathPrefixes"))
         block_binary_files = _to_bool(params.get("blockBinaryFiles"), DEFAULT_BLOCK_BINARY_FILES)
-        redact_secrets_in_errors = _to_bool(params.get("redactSecretsInErrors"), DEFAULT_REDACT_SECRETS_IN_ERRORS)
 
         if not _is_allowed_org(org, allowed_orgs):
             raise ToolError("org_not_allowed", f"Organization '{org}' is not allowed")
@@ -439,6 +654,10 @@ def _run(params):
             raise ToolError("path_not_allowed", f"Path '{path}' is not allowed")
         if max_bytes < 1 or max_bytes > MAX_HARD_LIMIT:
             raise ToolError("file_too_large", f"maxBytes must be between 1 and {MAX_HARD_LIMIT}")
+        if max_files < 1 or max_files > MAX_FILE_COUNT_HARD_LIMIT:
+            raise ToolError("file_too_large", f"maxFiles must be between 1 and {MAX_FILE_COUNT_HARD_LIMIT}")
+        if max_total_bytes < 1 or max_total_bytes > MAX_TOTAL_HARD_LIMIT:
+            raise ToolError("file_too_large", f"maxTotalBytes must be between 1 and {MAX_TOTAL_HARD_LIMIT}")
 
         private_key_pem = _get_key_vault_secret(
             key_vault_name,
@@ -453,53 +672,43 @@ def _run(params):
         if not resolved_ref:
             raise ToolError("internal_error", "Repository default branch is missing")
 
-        commit_sha = _get_commit_sha(org, repo, resolved_ref, installation_token)
-        file_info = _get_file(org, repo, path, resolved_ref, installation_token)
-        raw_bytes = file_info["rawBytes"]
+        commit_details = _get_commit_details(org, repo, resolved_ref, installation_token)
+        path_entry = _get_path_entry(org, repo, path, resolved_ref, installation_token)
 
-        if block_binary_files and _looks_binary(raw_bytes):
-            raise ToolError("binary_file_not_supported", "Binary files are not supported by this tool")
+        if path_entry["type"] == "directory":
+            return _build_directory_result(
+                org,
+                repo,
+                path,
+                resolved_ref,
+                commit_details["commitSha"],
+                commit_details["treeSha"],
+                installation_token,
+                max_bytes,
+                max_files,
+                max_total_bytes,
+                fail_on_truncate,
+                include_metadata,
+                block_binary_files,
+            )
 
-        try:
-            decoded = raw_bytes.decode("utf-8")
-            encoding = "utf-8"
-        except UnicodeDecodeError:
-            raise ToolError("binary_file_not_supported", "File content is not valid utf-8 text")
-
-        warnings = []
-        truncated = False
-        if len(raw_bytes) > max_bytes:
-            if fail_on_truncate:
-                raise ToolError("file_too_large", f"File exceeds maxBytes limit of {max_bytes}")
-            decoded = raw_bytes[:max_bytes].decode("utf-8", errors="ignore")
-            truncated = True
-            warnings.append(f"Content truncated to {max_bytes} bytes")
-
-        result = {
-            "org": org,
-            "repo": repo,
-            "path": path,
-            "ref": resolved_ref,
-            "content": decoded,
-            "truncated": truncated,
-        }
-
-        if include_metadata:
-            result["commitSha"] = commit_sha
-            result["sizeBytes"] = file_info["sizeBytes"]
-            result["contentType"] = file_info["contentType"]
-            result["encoding"] = encoding
-            if warnings:
-                result["warnings"] = warnings
-
-        return result
+        return _build_single_file_result(
+            org,
+            repo,
+            path,
+            resolved_ref,
+            commit_details["commitSha"],
+            path_entry,
+            max_bytes,
+            fail_on_truncate,
+            include_metadata,
+            block_binary_files,
+        )
     except ToolError as exc:
         return _result_error(exc.code, exc.message, exc.retryable, redact_secrets_in_errors)
     except KeyError as exc:
-        redact_secrets_in_errors = _to_bool(params.get("redactSecretsInErrors"), DEFAULT_REDACT_SECRETS_IN_ERRORS) if isinstance(params, dict) else DEFAULT_REDACT_SECRETS_IN_ERRORS
         return _result_error("internal_error", f"Missing required input: {exc.args[0]}", redact_secrets=redact_secrets_in_errors)
     except Exception as exc:
-        redact_secrets_in_errors = _to_bool(params.get("redactSecretsInErrors"), DEFAULT_REDACT_SECRETS_IN_ERRORS) if isinstance(params, dict) else DEFAULT_REDACT_SECRETS_IN_ERRORS
         return _result_error("internal_error", f"Unexpected error: {exc}", redact_secrets=redact_secrets_in_errors)
 
 
@@ -510,6 +719,8 @@ def main(
     appId=None,
     ref=None,
     maxBytes=DEFAULT_MAX_FILE_BYTES,
+    maxFiles=DEFAULT_MAX_FILES,
+    maxTotalBytes=DEFAULT_MAX_TOTAL_BYTES,
     failOnTruncate=False,
     includeMetadata=True,
     keyVaultName=DEFAULT_KEY_VAULT_NAME,
@@ -534,6 +745,8 @@ def main(
         "appId": appId,
         "ref": ref,
         "maxBytes": maxBytes,
+        "maxFiles": maxFiles,
+        "maxTotalBytes": maxTotalBytes,
         "failOnTruncate": failOnTruncate,
         "includeMetadata": includeMetadata,
         "keyVaultName": keyVaultName,
