@@ -22,6 +22,7 @@ resource "azurerm_private_endpoint" "uk_containerenv_pe" {
   }
 }
 
+
 resource "azurerm_container_app" "github_mcp" {
   name                         = "${var.prefix}-app"
   container_app_environment_id = azurerm_container_app_environment.this.id
