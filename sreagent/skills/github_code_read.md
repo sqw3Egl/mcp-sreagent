@@ -3,14 +3,14 @@ name: github-code-reading
 description: |
   Use this skill when the user wants to read, inspect, or summarize files or directory trees from a GitHub repository through the GitHub App-backed read-only tool. It guides the agent to gather the minimum required inputs, prefer exact file reads unless the user explicitly asks for a broader root-path read, and keep authentication details out of normal tool inputs and responses.
 tools:
-  - github_app_read_file
+  - GithubConnectionEmulator
 ---
 
 # GitHub Code Reading Skill
 
 ## Purpose
 
-Use the `github_app_read_file` tool to read repository files through GitHub App authentication without exposing private key material in the conversation or per-call inputs.
+Use the `GithubConnectionEmulator` tool to read repository files through GitHub App authentication without exposing private key material in the conversation or per-call inputs.
 
 ## When This Skill Applies
 
