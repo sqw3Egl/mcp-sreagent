@@ -48,6 +48,7 @@ DEFAULT_REDACT_SECRETS_IN_ERRORS = True
 DEFAULT_INSTALLATION_MODE = "auto"
 DEFAULT_KEY_VAULT_NAME = "uks-keyvault-kv"
 DEFAULT_KEY_VAULT_SECRET_NAME = "github-app-private-key-pem"
+DEFAULT_MANAGED_IDENTITY_CLIENT_ID = "8c6aef87-5a59-41e1-8e7a-a110d85d92a0"
 DEFAULT_ALLOWED_ORGS = {"sqw3Egl"}
 SECRETS_TO_REDACT = []
 
@@ -382,7 +383,7 @@ def _run(params):
         key_vault_name = params.get("keyVaultName", DEFAULT_KEY_VAULT_NAME)
         key_vault_secret_name = params.get("keyVaultSecretName", DEFAULT_KEY_VAULT_SECRET_NAME)
         key_vault_secret_version = params.get("keyVaultSecretVersion")
-        managed_identity_client_id = params.get("managedIdentityClientId")
+        managed_identity_client_id = params.get("managedIdentityClientId", DEFAULT_MANAGED_IDENTITY_CLIENT_ID)
 
         installation_mode = str(params.get("installationMode", DEFAULT_INSTALLATION_MODE)).strip().lower()
         installation_id = params.get("installationId")
@@ -477,7 +478,7 @@ def main(
     keyVaultName=DEFAULT_KEY_VAULT_NAME,
     keyVaultSecretName=DEFAULT_KEY_VAULT_SECRET_NAME,
     keyVaultSecretVersion=None,
-    managedIdentityClientId=None,
+    managedIdentityClientId=DEFAULT_MANAGED_IDENTITY_CLIENT_ID,
     installationMode=DEFAULT_INSTALLATION_MODE,
     installationId=None,
     allowedOrgs=None,
