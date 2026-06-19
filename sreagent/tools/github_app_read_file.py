@@ -34,6 +34,7 @@ Optional call parameters:
 import base64
 import json
 import mimetypes
+import os
 import posixpath
 import time
 import urllib.error
@@ -169,7 +170,43 @@ def _http_json(method, url, headers, body=None):
         raise ToolError("internal_error", f"Network error calling remote service: {exc}", retryable=True)
 
 
+def _get_msi_token_from_endpoint(endpoint, resource, managed_identity_client_id=None):
+    query = {
+        "resource": resource,
+        "api-version": "2019-08-01",
+    }
+    if managed_identity_client_id:
+        query["client_id"] = managed_identity_client_id
+
+    url = endpoint + ("&" if "?" in endpoint else "?") + urllib.parse.urlencode(query)
+    headers = {"Metadata": "true"}
+
+    identity_header = os.environ.get("IDENTITY_HEADER")
+    msi_secret = os.environ.get("MSI_SECRET")
+    if identity_header:
+        headers["X-IDENTITY-HEADER"] = identity_header
+    if msi_secret:
+        headers["Secret"] = msi_secret
+
+    status, payload, _ = _http_json("GET", url, headers)
+    if status == 200 and payload.get("access_token"):
+        token = payload["access_token"]
+        _remember_secret(token)
+        return token
+    if status in (400, 401, 403):
+        raise ToolError("keyvault_access_denied", payload.get("error_description", payload.get("message", "Managed identity token request failed")))
+    raise ToolError("internal_error", payload.get("error_description", payload.get("message", "Failed to acquire managed identity token")), retryable=status >= 500)
+
+
 def _get_managed_identity_token(resource, managed_identity_client_id=None):
+    identity_endpoint = os.environ.get("IDENTITY_ENDPOINT") or os.environ.get("MSI_ENDPOINT")
+    if identity_endpoint:
+        try:
+            return _get_msi_token_from_endpoint(identity_endpoint, resource, managed_identity_client_id)
+        except ToolError as exc:
+            if exc.code != "internal_error" or not exc.retryable:
+                raise
+
     query = {
         "api-version": "2018-02-01",
         "resource": resource,
