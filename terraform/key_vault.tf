@@ -82,8 +82,3 @@ resource "azurerm_key_vault_secret" "github_app_private_key" {
   tags = var.tags
 }
 
-resource "azurerm_role_assignment" "github_mcp_kv_secrets_user" {
-  scope                = azurerm_key_vault.uks_keyvault_kv.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.uks_sreagent_identity.principal_id
-}

@@ -7,8 +7,3 @@ resource "azurerm_container_registry" "github_mcp" {
   tags                = var.tags
 }
 
-resource "azurerm_role_assignment" "github_mcp_acr_pull" {
-  scope                = azurerm_container_registry.github_mcp.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.uks_sreagent_identity.principal_id
-}

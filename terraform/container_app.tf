@@ -1,4 +1,4 @@
-resource "azurerm_container_app_environment" "this" {
+resource "azurerm_container_app_environment" "uk_containerapp-env" {
   name                       = "${var.prefix}-cae"
   location                   = azurerm_virtual_network.uks_vnet_vnet.location
   resource_group_name        = azurerm_resource_group.uks_sreagent_rsg.name
@@ -16,7 +16,7 @@ resource "azurerm_private_endpoint" "uk_containerenv_pe" {
 
   private_service_connection {
     name                           = "uk-containerenv-pe1_75cb7dae-6fc0-40ba-1234"
-    private_connection_resource_id = azurerm_container_app_environment.this.id
+    private_connection_resource_id = azurerm_container_app_environment.uk_containerapp-env.id
     is_manual_connection           = false
     subresource_names              = ["managedEnvironments"]
   }
@@ -25,7 +25,7 @@ resource "azurerm_private_endpoint" "uk_containerenv_pe" {
 
 resource "azurerm_container_app" "github_mcp" {
   name                         = "${var.prefix}-app"
-  container_app_environment_id = azurerm_container_app_environment.this.id
+  container_app_environment_id = azurerm_container_app_environment.uk_containerapp-env.id
   resource_group_name          = azurerm_resource_group.uks_sreagent_rsg.name
   revision_mode                = "Single"
   tags                         = var.tags
