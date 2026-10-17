@@ -10,6 +10,12 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
+    # Only needed to process the `removed` blocks in aks_test_app.tf; drop both
+    # once those resources are gone from state.
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.36, < 4.0"
+    }
   }
 }
 

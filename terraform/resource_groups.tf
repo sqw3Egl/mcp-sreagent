@@ -27,3 +27,8 @@ resource "azurerm_resource_group" "uks_sreagent_rsg" {
   name     = "uks-sreagent-rsg"
   location = "eastus2"
 }
+
+resource "azurerm_resource_group" "uks_aks_rsg" {
+  name     = "uks-aks-rsg"
+  location = "uksouth"
+}

@@ -11,8 +11,8 @@ resource "azurerm_key_vault" "uks_keyvault_kv" {
   network_acls {
     bypass         = "AzureServices"
     default_action = "Deny"
-    ip_rules       = [
-         "83.67.195.205/32"
+    ip_rules = [
+      "83.67.203.191/32"
     ]
   }
 }
@@ -36,7 +36,7 @@ resource "azurerm_private_endpoint" "uk_keyvault_pe" {
 removed {
   from = azapi_resource.uk_keyvault_pe_nic
   lifecycle {
-    destroy = false 
+    destroy = false
   }
 }
 
@@ -80,5 +80,9 @@ resource "azurerm_key_vault_secret" "github_app_private_key" {
   key_vault_id = azurerm_key_vault.uks_keyvault_kv.id
 
   tags = var.tags
+
+  depends_on = [
+    azurerm_role_assignment.uks_keyvault_deployer_secrets_officer,
+  ]
 }
 

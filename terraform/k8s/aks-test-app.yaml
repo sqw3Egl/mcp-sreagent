@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aks-test-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks-helloworld
+  namespace: aks-test-app
+  labels:
+    app: aks-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aks-helloworld
+  template:
+    metadata:
+      labels:
+        app: aks-helloworld
+    spec:
+      containers:
+        - name: aks-helloworld
+          image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
+          ports:
+            - containerPort: 80
+          env:
+            - name: TITLE
+              value: uks-aks-aks test app
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+# Internal load balancer with a fixed private IP from the AKS subnet, reachable
+# only from within uks-vnet-vnet (and anything peered/connected to it).
+apiVersion: v1
+kind: Service
+metadata:
+  name: aks-helloworld
+  namespace: aks-test-app
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: AKS
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: 10.0.0.126
+spec:
+  type: LoadBalancer
+  selector:
+    app: aks-helloworld
+  ports:
+    - port: 80
+      targetPort: 80

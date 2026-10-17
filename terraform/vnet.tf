@@ -63,3 +63,14 @@ resource "azurerm_subnet" "private_endpoints" {
   default_outbound_access_enabled   = false
   private_endpoint_network_policies = "Disabled"
 }
+
+# AKS node subnet. Pods use the CNI overlay range, so only nodes take IPs here.
+resource "azurerm_subnet" "aks" {
+  name                 = "AKS"
+  resource_group_name  = azurerm_resource_group.uks_vnet_rsg.name
+  virtual_network_name = azurerm_virtual_network.uks_vnet_vnet.name
+  address_prefixes     = ["10.0.0.96/27"]
+
+  default_outbound_access_enabled   = false
+  private_endpoint_network_policies = "Disabled"
+}

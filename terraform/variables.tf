@@ -93,3 +93,15 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+# Cheapest uksouth size with quota that meets the AKS system pool minimum
+# (2 vCPU / 4 GiB). B-series v2 has 0 quota and B2s (v1) isn't offered.
+variable "aks_node_vm_size" {
+  type    = string
+  default = "Standard_D2als_v6"
+}
+
+variable "aks_node_count" {
+  type    = number
+  default = 1
+}
